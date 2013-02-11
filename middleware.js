@@ -55,6 +55,7 @@ exports.userFromSession = function userFromSession() {
     }
     
     if (!req.session.emails) {
+      logger.debug('could not find email(s) in session');
       return next();
     }
     

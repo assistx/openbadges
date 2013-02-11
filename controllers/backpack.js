@@ -85,6 +85,7 @@ exports.authenticate = function authenticate(request, response) {
 
 exports.signout = function signout(request, response) {
   request.session = {};
+  request.logout();
   response.redirect('/backpack/login', 303);
 };
 
@@ -249,6 +250,7 @@ exports.manage = function manage(request, response, next) {
 exports.userBadgeUpload = function userBadgeUpload(request, response) {
   var user = request.user;
   var tmpfile = request.files.userBadge;
+  delete request.session.azureacsassertions;
 
   // go back to the manage page and potentially show an error
   function redirect(err) {

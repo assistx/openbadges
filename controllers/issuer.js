@@ -103,13 +103,15 @@ exports.frame = function (req, res) {
     layout: null,
     framed: true,
     csrfToken: req.session._csrf,
-    email: req.session.emails && req.session.emails[0]
+    email: req.session.emails && req.session.emails[0],
+    frame: req.query[0]
   });
 };
 
 exports.frameless = function (req, res) {
-  var assertionUrls = req.body.assertions || [];
+  var assertionUrls = req.body.assertions || req.session.azureacsassertions || [];
   assertionUrls = typeof assertionUrls === 'string' ? [assertionUrls] : assertionUrls;
+  req.session.azureacsassertions = assertionUrls;
   for (var i = 0; i < assertionUrls.length; i++) {
     var url = assertionUrls[i];
     if (!validUrl(url)) {

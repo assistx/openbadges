@@ -1,0 +1,15 @@
+{% extends 'layout.html' %}
+{% block body %}
+<h1>Welcome</h1>
+<h2>You need to set your email address...</h2>
+<br/>
+<form method="POST" action="/auth/azureacs/register">
+  <input name="email" type="email" placeholder="email"></input>
+  <input name="_csrf" type="hidden" value="{{ csrfToken }}"></input>
+  <input type="submit" value="submit">
+</form>
+{% endblock %}
+
+
+
+

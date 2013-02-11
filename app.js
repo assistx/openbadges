@@ -51,13 +51,16 @@ app.use(middleware.userFromSession());
 app.use(flash());
 app.use(middleware.csrf({
   whitelist: [
-    '/backpack/authenticate',
-    '/issuer/validator/?',
-    '/displayer/convert/.+',
-    '/issuer/frameless.*'
+    '/backpack/authenticate', 
+    '/issuer/validator/?', 
+    '/displayer/convert/.+', 
+    '/issuer/frameless.*',
+    '/auth/azureacs/callback'
   ]
 }));
 app.use(middleware.cors({ whitelist: ['/_badges.*', '/issuer.*', '/baker', '/displayer/.+/group.*'] }));
+require("./azureacs").initAzureACS(app); 
+
 app.configure('development', function () {
   app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
   var gitUtil = require('./lib/git-util');
@@ -72,7 +75,6 @@ app.configure('development', function () {
 app.configure('production', function () {
   app.use(express.errorHandler());
 });
-
 
 // Routes
 // ------
@@ -134,8 +136,7 @@ app.post('/share/:groupUrl', share.createOrUpdate);
 app.put('/share/:groupUrl', share.createOrUpdate);
 app.get('/share/:groupUrl', share.show);
 
-if (!module.parent) {
-  var start_server = function start_server(app) {
+var start_server = function start_server(app) {
     var port = app.config.get('port');
     var pid = process.pid.toString();
     var pidfile = path.join(app.config.get('var_path'), 'server.pid');
@@ -145,18 +146,6 @@ if (!module.parent) {
     app.logger.info('opening server on port: ' + port);
     app.logger.info('READY PLAYER ONE');
 
-    fs.unlink(pidfile, function () {
-      fs.writeFile(pidfile, pid, function (err) {
-        if (err) throw Error('could not make pidfile: ' + err);
-      });
-    });
+};
 
-    process.on('SIGTERM', function () {
-      app.logger.info('recieved SIGTERM, exiting');
-      process.exit();
-    });
-  };
-  start_server(app);
-} else {
-  module.exports = http.createServer(app);
-}
+start_server(app);

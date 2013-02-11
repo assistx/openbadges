@@ -47,6 +47,10 @@ $(window).ready(function() {
       });
       return false;
     });
+    $(".logged-in .azurelogout").click(function() {
+      $(".logged-in .next").unbind("click");
+      window.location = "/auth/azureacs/logout";
+    });
   }
 
   Session.on("login-error", function() {

@@ -21,6 +21,17 @@ User.findOrCreate = function (email, callback) {
   });
 };
 
+User.findOrCreateByFedId = function(identity, callback) {
+  var email = identity.email ? identity.email : (require('crypto').randomBytes(16).toString('hex')) + '@no.email';
+  var active = identity.email ? true : false;
+  var newUser = new User({ email: email, fed_id: identity.federated_id, active: active });
+  User.findOne({ fed_id: identity.federated_id }, function (err, user) {
+    if (err) { return callback(err); }
+    if (user) { return callback(null, user); }
+    else { return newUser.save(callback); }
+  });
+};
+
 User.validators = {
   email: function (value) {
     if (!regex.email.test(value)) { return "invalid value for required field `email`"; }

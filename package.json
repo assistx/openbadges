@@ -28,7 +28,9 @@
     "up": "~0.2.2",
     "winston": "~0.5.10",
     "tap": "~0.3.2",
-    "async": "~0.1.22"
+    "async": "~0.1.22",
+    "passport": "~0.1.15",
+    "passport-wsfed-saml2": "~0.3.3"
   },
   "engines": {
     "node": "0.6.x"

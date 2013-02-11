@@ -16,13 +16,15 @@
 <link rel="stylesheet" href="/css/bootstrap-2.0.2.min.css" />
 <link rel="stylesheet" href="/css/style.css" type="text/css" media="all" />
 <link rel="stylesheet" href="/css/badge-accept.css" type="text/css" media="all" />
+<link rel="stylesheet" href="/css/login-buttons.css" type="text/css" media="all" />
 <title>Accept Your Badges</title>
 <div class="navbar navbar-fixed-top">
   <div class="navbar-inner">
     <div class="container-fluid" style="position: relative;">
       <h3><a class="brand" href="/" target="_blank">Open Badge Backpack</a></h3>
       <img src="/images/ajax-loader.gif" id="ajax-loader">
-      <a id="moztab" href="http://mozilla.org" target="_blank">a mozilla.org joint</a>
+      <!--<a id="moztab" href="http://mozilla.org" target="_blank">a mozilla.org joint</a>-->
+      <h3><a class="brand" href="http://research.microsoft.com/"target="_blank" style="float:right;">Microsoft Research</a>
       {% if framed %}<a class="close closeFrame" href="#">&times;</a>{% endif %}
     </div>
   </div>
@@ -32,12 +34,11 @@
   <div id="messages"></div>
   <div id="welcome" style="display: none">
     <p>Hi! You are about to submit <span class="badge-count">a badge</span> to the Mozilla Open Badge Backpack at <span class="host"></span><span class="logged-in"> as <span class="email"></span></span>.</p>
-    <div class="logged-in"><button class="next btn btn-primary">Cool, let's go!</button> <button class="btn btn-danger logout">I am not <span class="email"></span>.</button></div>
+    <div class="logged-in"><button class="next btn btn-primary">Cool, let's go!</button> {% if framed %}<button class="btn btn-danger logout">{% else %}<button class="btn btn-danger azurelogout">{% endif %}I am not <span class="email"></span>.</button></div>
     <div class="logged-out">
-      <p>To begin, you will need to log in.</p>
-      <a class="js-browserid-link" href="#">
-        <img src="https://browserid.org/i/sign_in_green.png"/>
-      </a>
+      <p>To begin, you will need to log in. To use Windows Live ID, Google, Yahoo! or Facebook click the Azure ACS button, if you have a Persona account use the Persona button.</p>
+      {% if not framed %}<p><a href="/auth/azureacs" class="persona-button"><span>Sign in with Azure ACS</span></a></p>{% endif %}
+      <p><a class="js-browserid-link persona-button orange" href="#"><span>Sign in with Persona  </span></a></p>
     </div>
   </div>
   <div id="farewell" style="display: none">
