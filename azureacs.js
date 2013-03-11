@@ -100,6 +100,69 @@ exports.initAzureACS = function (app) {
         else
             res.redirect('/');
     });
+    
+    app.get('/auth/azureacs/remove', function(req, res) {
+    	var email = null;
+    	
+    	if (req.session.emails[0]) {
+    		email = req.session.emails[0];
+    	} else if (req.user && req.user.email) {
+    		email = req.user.email;
+    	} else if (req.query['email']) {
+    	
+    	} else {
+    		res.send("Error - no account specified, please login");
+    		res.end();
+    	}
+    	
+    	User.findOne({ email: email }, function (err, user) {
+		    if (err) { res.send("Error - unable to get user " + err); res.end(); }
+    		if (!user) { res.send("Error - unable to find user " + err); res.end(); }
+    		else { 
+    			Group.find({ user_id: user.id }, function (err, groups){
+    				if (err) { res.send("Error - unable to get groups " + err); res.end(); }    				
+    				if (groups.length > 0) {   		
+    					var groupCount = 0;		
+    					groups.forEach(function(group) {
+    						++groupCount;
+    						Portfolio.find({group_id: group.id}, function(err, portfolios) {
+    							if (err) { res.send("Error - unable to get portfolios " + err); res.end(); }  
+    							if (portfolios.length > 0) {
+    								var portfolioCount = 0;
+    								portfolios.forEach(function(portfolio) {
+    									++portfolioCount;
+    									portfolio.destroy(function() {
+    										if (--portfolioCount === 0) { 
+    											removeGroup(function() {
+    												if (--groupCount === 0) { removeUser(user, function() { res.send("Done!"); }); }
+    											});    	
+    										}										
+    									});
+    								});
+    							} else {
+    								removeGroup(function() {
+    									removeGroup(group, function() {
+    										if (--groupCount === 0) { removeUser(user, function() { res.send("Done!"); }); }
+    									});
+    								});
+    							}
+    						});	
+    					});
+    				} else {
+    					removeUser(user, function() { res.send("Done!"); });
+ 					}
+ 					
+ 					function removeGroup(group, callback) {
+ 						group.destroy(callback);
+ 					}
+    			});
+    		}
+    		
+    		function removeUser(user, callback) {
+    			user.destroy(callback);
+    		}
+  		});
+    });
 };
 
 function findOrCreateById(fedid, callback) {
