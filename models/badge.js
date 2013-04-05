@@ -2,11 +2,17 @@ var mysql = require('../lib/mysql');
 var regex = require('../lib/regex');
 var crypto = require('crypto');
 var Base = require('./mysql-base');
+const utils = require('../lib/utils');
 
 function sha256(value) {
   var sum = crypto.createHash('sha256');
   sum.update(value);
   return sum.digest('hex');
+}
+
+
+function isObject(thing) {
+  return Object.prototype.toString.call(thing) === '[object Object]';
 }
 
 var Badge = function (attributes) {
@@ -17,8 +23,12 @@ Base.apply(Badge, 'badge');
 
 Badge.prototype.presave = function () {
   if (!this.get('id')) {
-    this.set('body_hash', sha256(this.get('body')));
+    this.set('body_hash', Badge.createHash(this.get('body')));
   }
+};
+
+Badge.createHash = function createHash(body) {
+  return sha256(JSON.stringify(body));
 };
 
 Badge.confirmRecipient = function confirmRecipient(assertion, email) {
@@ -26,21 +36,28 @@ Badge.confirmRecipient = function confirmRecipient(assertion, email) {
   if (!assertion)
     return false;
 
-  const badgeEmail = assertion.recipient;
-  const salt = assertion.salt || '';
+  const recipient = isObject(assertion.recipient)
+    ? assertion.recipient.identity
+    : assertion.recipient
+  const salt = isObject(assertion.recipient)
+    ? assertion.recipient.salt || ''
+    : assertion.salt || ''
 
-  if (!badgeEmail || !email)
+  if (!recipient || !email)
     return false;
+
+  if (typeof recipient !== 'string')
+    return false
 
   // if it's an email address, do a straight comparison
-  if (/@/.test(badgeEmail))
-    return badgeEmail === email;
+  if (/@/.test(recipient))
+    return recipient === email;
 
   // if it's not an email address, it must have an alg and dollar sign.
-  if (!(badgeEmail.match(/\w+(\d+)?\$.+/)))
+  if (!(recipient.match(/\w+(\d+)?\$.+/)))
     return false;
 
-  const parts = badgeEmail.split('$');
+  const parts = recipient.split('$');
   const algorithm = parts[0];
   const expect = parts[1];
   var hasher;
@@ -61,6 +78,15 @@ Badge.confirmRecipient = function confirmRecipient(assertion, email) {
   return value.toLowerCase() === expect.toLowerCase();
 };
 
+Badge.prototype.share = function share(callback) {
+  if (this.get('public_path'))
+    return callback(null, this);
+
+  this.presave();
+  this.set('public_path', this.get('body_hash'));
+  this.save(callback);
+};
+
 Badge.prototype.confirmRecipient = function confirmRecipient(email) {
   return Badge.confirmRecipient(this.get('body'), email);
 };
@@ -68,6 +94,16 @@ Badge.prototype.confirmRecipient = function confirmRecipient(email) {
 
 Badge.prototype.checkHash = function checkHash() {
   return sha256(JSON.stringify(this.get('body'))) === this.get('body_hash');
+};
+
+Badge.prototype.getFromAssertion = function getFromAssertion(dotstring) {
+  const parts = dotstring.split('.');
+  const last = parts.pop();
+  const obj = parts.reduce(function (obj, field) {
+    if (!obj) return undefined;
+    return obj[field];
+  }, this.get('body'));
+  return obj && obj[last];
 };
 
 // Validators called by `save()` (see mysql-base) in preparation for saving.
@@ -80,50 +116,29 @@ Badge.prototype.checkHash = function checkHash() {
 // TODO: make these errors more than strings so we don't have to parse
 // them to figure out how to handle the error
 Badge.validators = {
-  type: function (value, attributes) {
-    var valid = ['signed', 'hosted'];
-    if (valid.indexOf(value) === -1) {
-      return "Unknown type: " + value;
-    }
-    if (value === 'hosted' && !attributes.endpoint) {
-      return "If type is hosted, endpoint must be set";
-    }
-    if (value === 'signed' && !attributes.jwt) {
-      return "If type is signed, jwt must be set";
-    }
-    if (value === 'signed' && !attributes.public_key) {
-      return "If type is signed, public_key must be set";
-    }
-  },
-  endpoint: function (value, attributes) {
-    if (!value && attributes.type === 'hosted') {
-      return "If type is hosted, endpoint must be set";
-    }
-  },
-  jwt: function (value, attributes) {
-    if (!value && attributes.type === 'signed') {
-      return "If type is signed, jwt must be set";
-    }
-  },
-  public_key: function (value, attributes) {
-    if (!value && attributes.type === 'signed') {
-      return "If type is signed, public_key must be set";
-    }
-  },
-  image_path: function (value) {
-    if (!value) { return "Must have an image_path."; }
-  },
   body: function (value) {
-    if (!value) { return "Must have a body."; }
-    if (String(value) !== '[object Object]') { return "body must be an object"; }
-    if (Badge.validateBody(value) instanceof Error) { return "invalid body"; }
+    if (!value)
+      return "Must have a body.";
+    if (String(value) !== '[object Object]')
+      return "body must be an object";
   }
+};
+
+Badge.findByUrl = function (url, callback) {
+  Badge.findOne({public_path: url}, callback);
 };
 
 // Prepare a field as it goes into or comes out of the database.
 Badge.prepare = {
   'in': { body: function (value) { return JSON.stringify(value); } },
-  'out': { body: function (value) { return JSON.parse(value); } }
+  'out': {
+    body: function (value) {
+      return JSON.parse(value);
+    },
+    imageUrl: function (value, attr) {
+      return utils.fullUrl('/images/badge/' + attr['body_hash'] + '.png');
+    },
+  }
 };
 
 // Virtual finders. By default, `find()` will take the keys of the criteria
@@ -216,4 +231,37 @@ Badge.validateBody = function (body) {
   if (Object.keys(err.fields).length) { return err; }
   return null;
 };
+
+// callback has the signature callback(err, {totalPerIssuer: ['issuer':1], totalBadges:1})
+Badge.stats = function (callback) {
+  var totalBadges = 0;
+  var issuers = {};
+  Badge.findAll(function(err, badges) {
+    if (err) {
+      return callback(err);
+    }
+    totalBadges = badges.length;
+    badges.forEach(function (badge) {
+      var assertion = badge.get('body').badge;
+      if (!assertion.issuer) return;
+
+      var name = assertion.issuer.name;
+      var url = assertion.issuer.origin;
+
+      issuers[url] = issuers[url] || { name: name, total: 0 };
+      issuers[url].total++;
+    });
+
+    var urls = Object.keys(issuers);
+    var totalPerIssuer = urls.map(function (url) {
+      var issuer = issuers[url];
+      return { url: url, total: issuer.total, name: issuer.name }
+    });
+    totalPerIssuer.sort(function(issuer1, issuer2) {
+      return issuer2.total - issuer1.total
+    });
+    return callback(null, {totalPerIssuer: totalPerIssuer, totalBadges: totalBadges} );
+  });
+}
+
 module.exports = Badge;

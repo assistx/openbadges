@@ -7,15 +7,29 @@
     <title dir="ltr">Yep</title>
     
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <script src="http://localhost:8888/issuer.js"></script>
   </head>
   <body>
-    <label>Email: <input id='email'></label>
+    <form method="post" action="sign">
+      <label>Make signed badge for email <input name="email" placeholder="steve.holt@example.org"></label>
+      <input type="submit" value="Do it">
+    </form>
+
+    <label>Email or Signature: <input id='email'></label>
     <label>Modaless: <input id='modaless' type='checkbox'></label>
-    <button id='unhashed'>Unhashed</button>
-    <button id='hashed'>Hashed</button>
-    <button id='invalid'>Invalid</button>
+    <button id="old">Old</button>
+    <button id="unhashed">Unhashed</button>
+    <button id="hashed">Hashed</button>
+    <button id="invalid">Invalid</button>
+    <button id="signature">Signature</button>
     <script>
+      function qualify(href) {
+        var a = document.createElement('a');
+        a.setAttribute('href', href);
+        return a.href;
+      }
+      
+      
+      var old = document.getElementById('old');
       var unhashed = document.getElementById('unhashed');
       var hashed = document.getElementById('hashed');
       var invalid = document.getElementById('invalid');
@@ -31,22 +45,33 @@
         }
       }
       
+      old.addEventListener('click', function(){
+        var url = qualify('/old.json?email=') + encodeURIComponent(getEmail());
+        issue(url)
+      },false)
+      
       unhashed.addEventListener('click', function(){
-        var url = 'http://localhost:8889/raw.json?email=' + encodeURIComponent(getEmail());
+        var url = qualify('/raw.json?email=') + encodeURIComponent(getEmail());
         issue(url)
       },false)
     
       hashed.addEventListener('click', function(){
-        var url = 'http://localhost:8889/hashed.json?email=' + encodeURIComponent(getEmail())
+        var url = qualify('/hashed.json?email=') + encodeURIComponent(getEmail())
         issue([url]);
       },false)
 
       // added to test whether proper error message is thrown for invalid assertion 
       invalid.addEventListener('click', function(){
-        var url = 'http://localhost:8889/invalid.json?email=' + encodeURIComponent(getEmail());
+        var url = qualify('/invalid.json?email=') + encodeURIComponent(getEmail());
         issue(url);
       },false)
     
+      signature.addEventListener('click', function(){
+        var assertion = getEmail();
+        issue(assertion);
+      },false)
+    
     </script>
+    <script src="http://localhost:8888/issuer.js"></script>
   </body>
 </html>

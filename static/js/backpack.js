@@ -12,14 +12,19 @@ $.ajaxSetup({
 })
 if(!nunjucks.env) {
     nunjucks.env = new nunjucks.Environment(new nunjucks.HttpLoader('/views'));
-    nunjucks.env.addFilter('formatdate', function (rawDate) {
-      if (parseInt(rawDate, 10) == rawDate) {
-        var date = new Date(rawDate * 1000);
-        return date.toString();
-      }
-      return rawDate;
-    });
 }
+if (!nunjucks.env.globals)
+  nunjucks.env.globals = {};
+$.extend(nunjucks.env.globals, {
+  csrfToken: CSRF
+});
+nunjucks.env.addFilter('formatdate', function (rawDate) {
+  if (parseInt(rawDate, 10) == rawDate) {
+    var date = new Date(rawDate * 1000);
+    return date.toString();
+  }
+  return rawDate;
+});
 }(/*end setup*/)
 
 
@@ -53,19 +58,32 @@ var errHandler = function (model, xhr) {
  * Nunjucks template helper
  */
 var template = function template(name, data) {
-    return $(nunjucks.env.render(name, data));
+    return $(nunjucks.env.render(name, $.extend(data, nunjucks.env.globals)));
 }
 
 // Model Definitions
 // ----------------------
 Badge.Model = Backbone.Model.extend({
-  urlRoot: '/badge'
+  urlRoot: '/badge',
+  isExpired: function() {
+    // parse a date in yyyy-mm-dd format
+    // taken from http://stackoverflow.com/a/2587398
+    var parseDate = function parseDate(input) {
+      var parts = input.match(/(\d+)/g);
+      // new Date(year, month [, date [, hours[, minutes[, seconds[, ms]]]]])
+      return new Date(parts[0], parts[1]-1, parts[2]); // months are 0-based
+    }
+    
+    var expiry = parseDate(this.attributes.body.expires).getTime();
+    
+    return Date.now() - expiry > 0;
+  }
 });
 
 Group.Model = Backbone.Model.extend({
   urlRoot: '/group',
   defaults: {
-    name: "New Group",
+    name: "New Collection",
     "public": false
   }
 });
@@ -310,7 +328,9 @@ Details.View = Backbone.View.extend({
     'click .badge-image': 'debugBadge',
     'click .disown': 'showConfirmation',
     'click .confirm-disown .nope': 'hideConfirmation',
-    'click .confirm-disown .yep': 'destroyBadge'
+    'click .confirm-disown .yep': 'destroyBadge',
+    'click .facebook-share': 'showFacebookModal',
+    'click .confirm-facebook-share .nope': 'hideFacebookModal'
   },
 
   debugBadge: function (event) {
@@ -325,6 +345,14 @@ Details.View = Backbone.View.extend({
     this.$el.find('.confirm-disown').fadeOut('fast');
   },
 
+  showFacebookModal: function () {
+	  this.$el.find('.confirm-facebook-share').fadeIn('fast');
+  },
+
+  hideFacebookModal: function () {
+	  this.$el.find('.confirm-facebook-share').fadeOut('fast');
+  },
+
   destroyBadge: function () {
     var badge = this.model;
     _.each(AllGroups.models, function (group) {
@@ -333,11 +361,20 @@ Details.View = Backbone.View.extend({
         collection.remove(badge);
       }
     });
+    this.hide();
     _.each(Badge.View.all, function (view) {
-      if (view.model.id === badge.id) view.$el.fadeOut('fast');
+      if (view.model.id === badge.id) {
+        view.$el.fadeOut('slow', function() {
+          var $parent = $(this.parentNode);
+          if ($parent.hasClass('openbadge-container')) {
+            $parent.remove();
+          } else {
+            $(this).remove();
+          }
+        });
+      }
     });
     badge.destroy();
-    this.hide();
   },
 
   nothing: function (event) {
@@ -562,5 +599,6 @@ var existingGroups = $('#groups').find('.group');
 _.each(existingBadges, Badge.fromElement);
 _.each(existingGroups, Group.fromElement);
 
+window.Badge = Badge;
 //end app scope
 }();

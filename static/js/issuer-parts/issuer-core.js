@@ -60,19 +60,17 @@ var OpenBadges = (function() {
 
   })();
 
-  function findRoot() {
-    for (var i = 0; i < document.scripts.length; i++) {
-      var script = document.scripts[i];
-      var match = script.src.match(/(.*)\/issuer\.js$/);
-      if (match)
-        return match[1] + '/';
-    }
-    throw new Error("issuer script not found.");
-  }
-
   var OpenBadges = {
-    // The root URL of the Open Badges API, determined dynamically.
-    ROOT: null,
+    // Returns the root URL of the Open Badges API, determined dynamically.
+    getRoot: function getRoot() {
+      for (var i = 0; i < document.scripts.length; i++) {
+        var script = document.scripts[i];
+        var match = script.src.match(/(.*)\/issuer\.js$/);
+        if (match)
+          return match[1] + '/';
+      }
+      throw new Error("issuer script not found.");
+    },
     // This function is documented at:
     //   https://github.com/mozilla/openbadges/wiki/Issuer-API
     // The final (undocumented) argument is used for testing.
@@ -83,7 +81,7 @@ var OpenBadges = (function() {
       hook = hook || function () {};
       callback = callback || function () {};
 
-      var root = this.ROOT = findRoot();
+      var root = this.getRoot();
       var div = $('<div></div>');
       div.css({
         position: 'fixed',
@@ -92,7 +90,7 @@ var OpenBadges = (function() {
         right: 0,
         bottom: 0,
         zIndex: 99999,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)'
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
       }).appendTo(document.body);
       var iframe = document.createElement("iframe");
       // add Date.now() to aggressively cache-bust.
@@ -102,7 +100,8 @@ var OpenBadges = (function() {
       var baseStyles = {
         border: "none",
         position: "absolute",
-        left: "50%"
+        left: "50%",
+        'border-radius': '10px'
       };
       $(iframe).css($.extend(baseStyles, layout.bestSize()));
       $(window).resize(function(){layout.resize(iframe);});
@@ -134,7 +133,7 @@ var OpenBadges = (function() {
     // It provides a modaless alternative to the classic issuer frame at the cost of the callback.
     issue_no_modal: function OpenBadges_issue_no_modal(assertions) {
       assertions = typeof assertions === 'string' ? [assertions] : assertions;
-      var root = this.ROOT = findRoot();
+      var root = this.getRoot();
       var url = root + "issuer/frameless?" + Date.now();
       var form = $('<form method="POST"></form>').attr('action', url).appendTo($('body')).hide();
       assertions.forEach(function(val, i, arr){

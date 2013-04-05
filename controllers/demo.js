@@ -32,7 +32,7 @@ exports.award = function (req, res) {
 
 exports.massAward = function (req, res) {
   if (!req.user) return res.send('nope');
-  var demoBadgeDir = path.join(process.cwd(), 'static', '_demo');
+  var demoBadgeDir = path.resolve(path.join(__dirname, '..', 'static', '_demo'));
   var email = req.user.get('email');
   var salt = 'ballertime';
   var hash = require('crypto').createHash('sha256').update(email + salt).digest('hex');
@@ -43,6 +43,7 @@ exports.massAward = function (req, res) {
       var imgUrl = ORIGIN + '/static/_demo/' + f;
       var assertion = makeDemoAssertion(recipient, imgUrl);
       return {
+        baseName: f,
         imgData: fs.readFileSync(path.join(demoBadgeDir, f)),
         assertion: assertion,
         assertionUrl: ORIGIN + '/demo/badge.json?' + qs.stringify({title: 'raaad', image: imgUrl, recipient: recipient})
@@ -52,8 +53,12 @@ exports.massAward = function (req, res) {
       awardBadge({
         assertion: item.assertion,
         url: item.assertionUrl,
+        public_path: [email, item.baseName].join(':'),
         imagedata: item.imgData,
         recipient: email
+      }, function(err) {
+        if (err)
+          logger.debug('baller, please:', err.message);
       });
     });
   res.redirect('/', 303);
@@ -89,7 +94,7 @@ function makeDemoAssertion(email, image, title, description) {
     badge: {
       version: 'v0.5.0',
       name: 'DEMO: ' + (title || 'Open Badges Demo Badge'),
-      description: description || "For rocking in the free world",
+      description: description || 'For rocking in the "free world"',
       image: image,
       criteria: '/demo/criteria',
       issuer: {

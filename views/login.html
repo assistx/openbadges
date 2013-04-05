@@ -1,8 +1,9 @@
 {% extends 'layout.html' %}
+{% set bodyClass = 'login' %}
 {% block body %}
-<h1>Welcome</h1>
-<h2>Use one of the buttons below to <span style="color:#0099FF;">sign in.</span><br/>To use Windows Live ID, Google, Yahoo! or Facebook click the Azure ACS button, if you have a Persona account use the Persona button.</h2><br/>
-Don&rsquo;t worry if you don&rsquo;t have a backpack account, that&rsquo;ll get taken care of once you sign in.<br/>
+<h1 class="title">Welcome to your Backpack</h1>
+<p class="subtitle">Celebrate your skills & passions</p>
+<a class="persona-button dark big js-browserid-link" href="#"><span>Log In or Sign Up</span></a>
 
 <form class="signin js-browserid-form" method="POST" action="/backpack/authenticate">
   <input class="js-browserid-input" name="assertion" type="hidden"></input>
@@ -11,10 +12,6 @@ Don&rsquo;t worry if you don&rsquo;t have a backpack account, that&rsquo;ll get 
 
 <div style="padding-top: 10px">
   <a href="/auth/azureacs" class="persona-button"><span>Sign in with Azure ACS</span></a>
-</div>
-
-<div style="padding-top: 10px">
-  <a class="js-browserid-link persona-button orange" href="#"><span>Sign in with Persona  </span></a>
 </div>
 
 <script type="text/javascript">

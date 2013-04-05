@@ -25,3 +25,6 @@
 /test.json
 /bin/badges.json
 /acceptance-test/local-config.js
+
+/static/css/*.css
+/static/js/nunjucks-templates.js

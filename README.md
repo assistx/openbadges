@@ -6,6 +6,9 @@ We intend to provide an open set of specifications, tools and services for
 generating verifiable badges that users can take with them wherever they go
 and use however they like.
 
+The latest open standard we released can be found in the new assertion specification: [https://github.com/mozilla/openbadges/wiki/New-Assertion-Specification](https://github.com/mozilla/openbadges/wiki/New-Assertion-Specification). 
+The assertion includes the open standard, the metadata specification, we defined. 
+
 For more information, check out http://openbadges.org
 
 ## I'm an Issuer, how do I use this?
@@ -51,7 +54,7 @@ expect in case of error.
 
 ## I want to play with the code, where do I start?
 
-### The easy way
+### The easy way[*](#a-warning)
 
 [Use Vagrant](http://vagrantup.com/v1/docs/getting-started/index.html). `vagrant up` in the project root will spin
 up a fully provisioned VM (it'll take about two or three minutes, longer if
@@ -93,6 +96,9 @@ and then back in windows you can fire up your favourite browser and connect to t
 
     http://localhost:8888
 
+#### A Warning
+:warning: Some developers have been having trouble with vagrant, and don't use it any more. Vagrant support may be out of date.
+
 ### The hard way
 
 1. Setup a MySQL database. Create a database and a user with full privileges on
@@ -118,9 +124,11 @@ and then back in windows you can fire up your favourite browser and connect to t
 
 3. Install local dependencies: `npm install`
 
-4. Run the test suite: `npm test`
+4. Install submodules: `git submodule update --init`
 
-5. Start your server: `./node_modules/.bin/up -w -p 8888 app.js`
+5. Run the test suite: `npm test`
+
+6. Start your server: `npm start`
 
 No matter which way you choose, you should join the
 [Open Badges Google Group](https://groups.google.com/forum/#!forum/openbadges). If
@@ -134,6 +142,47 @@ and do `sudo echo "33.33.33.11 openbadges.local" >> /etc/hosts` to make it
 happen. If you're on OS X, you can also use
 [Gas Mask](http://code.google.com/p/gmask/) for temporary hosts file switching
 rather than having to manually edit /etc/hosts
+
+### Database Migrations
+
+If you need to modify the database schema, you'll want to create a
+migration. You can do this as follows:
+
+1. Come up with an alphanumeric name for your migration, e.g.
+   `add-issuer-column`.
+
+2. Run `./bin/db-migrate create add-issuer-column`. This will create a new JS
+   file preixed with a timestamp in the `migrations` directory.
+   Something like the following should be displayed:
+
+       [INFO] Created migration at  
+       migrations/20130213205310-add-issuer-column.js
+
+3. Edit the new JS file as per the [node-db-migrate][] instructions.
+
+4. Try out your migration using `./bin/db-migrate up`.
+
+5. Try rolling back your migration using `./bin/db-migrate down`.
+
+And finally, note that during development, `npm start` automatically runs
+`./bin/db-migrate up` for you. For production use, you'll need to manually
+run this command yourself whenever you deploy changes that involve a
+schema change.
+
+If you want to write tests for your migration, check out 
+`test/migration.test.js` for inspiration.
+
+  [node-db-migrate]: https://github.com/nearinfinity/node-db-migrate#creating-migrations
+
+### Production 
+
+The codebase behaves slightly differently when run in an environment where
+environment variable `NODE_ENV=production`. These differences include:
+
+* less verbose logging
+* using precompiled templates for client-side rendering
+  * run `bin/template-precompile` to generate
+* "Test Site" banner will not show in the UI
 
 ## Related Projects
 * https://github.com/lmorchard/django-badger -- Issuing app for Django

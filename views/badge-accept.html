@@ -13,41 +13,58 @@
   }
 </script>
 {% endif %}
-<link rel="stylesheet" href="/css/bootstrap-2.0.2.min.css" />
-<link rel="stylesheet" href="/css/style.css" type="text/css" media="all" />
 <link rel="stylesheet" href="/css/badge-accept.css" type="text/css" media="all" />
 <link rel="stylesheet" href="/css/login-buttons.css" type="text/css" media="all" />
 <title>Accept Your Badges</title>
+<body class="{% if framed %}framed{% else %}frameless{% endif %}">
 <div class="navbar navbar-fixed-top">
   <div class="navbar-inner">
     <div class="container-fluid" style="position: relative;">
-      <h3><a class="brand" href="/" target="_blank">Open Badge Backpack</a></h3>
+      <img class="brand" src="/images/logo.png" alt="Mozilla Backpack logo" />
       <img src="/images/ajax-loader.gif" id="ajax-loader">
-      <!--<a id="moztab" href="http://mozilla.org" target="_blank">a mozilla.org joint</a>-->
-      <h3><a class="brand" href="http://research.microsoft.com/"target="_blank" style="float:right;">Microsoft Research</a>
-      {% if framed %}<a class="close closeFrame" href="#">&times;</a>{% endif %}
+      <a class="close closeFrame" href="#">&times;</a>
     </div>
   </div>
 </div>
 
 <div id="body" class="container-fluid">
   <div id="messages"></div>
-  <div id="welcome" style="display: none">
-    <p>Hi! You are about to submit <span class="badge-count">a badge</span> to the Mozilla Open Badge Backpack at <span class="host"></span><span class="logged-in"> as <span class="email"></span></span>.</p>
-    <div class="logged-in"><button class="next btn btn-primary">Cool, let's go!</button> {% if framed %}<button class="btn btn-danger logout">{% else %}<button class="btn btn-danger azurelogout">{% endif %}I am not <span class="email"></span>.</button></div>
+  <div id="welcome" class="narrow" style="display: none">
     <div class="logged-out">
-      <p>To begin, you will need to log in. To use Windows Live ID, Google, Yahoo! or Facebook click the Azure ACS button, if you have a Persona account use the Persona button.</p>
+      <h2>Hoorah!</h2>
+      <p class="lead">
+        You are about to send <strong class="badge-count">a badge</strong>
+        to your Open Badges Backpack at <strong class="host"></strong>.
+      </p>
+      <p class="lead">Log in to do so.</p>
+      <a class="persona-button dark js-browserid-link" href="#">
+        <span>Log in or Sign up</span>
+      </a>
       {% if not framed %}<p><a href="/auth/azureacs" class="persona-button"><span>Sign in with Azure ACS</span></a></p>{% endif %}
-      <p><a class="js-browserid-link persona-button orange" href="#"><span>Sign in with Persona  </span></a></p>
+    </div>
+    <div class="logged-in">
+      <p class="lead">You are about to send <strong class="badge-count">a badge</strong>
+      to your Open Badges Backpack at <strong class="host"></strong>.</p>
+      <button class="next btn btn-primary">Hoorah!</button>
+      <a href="#" class="logout">
+        I am not <span class="email"></span>.
+      </a>
     </div>
   </div>
-  <div id="farewell" style="display: none">
-    <h3 class="badges-0" style="display: none">You didn't add any badges to your backpack.</h3>
-    <h3 class="badges-1" style="display: none">You added one badge to your backpack.</h3>
-    <h3 class="badges-many" style="display: none">You added <span class="badges-added"></span> badges to your backpack.</h3>
-    <p>If you ever want to manage or view your badges, just visit your
-    <a href="/" target="_blank">Open Badge Backpack</a>.</p>
-    <button class="next btn btn-primary">Thanks.</button>
+  <div id="farewell" class="narrow" style="display: none">
+    <p class="badges-0 lead" style="display: none">You didn't add any open badges to your backpack.</p>
+    <p class="badges-1 lead" style="display: none">
+      You've sent <strong>1 badge</strong> to your Open Badges Backpack.
+    </p>
+    <p class="badges-many lead" style="display: none">
+      You've sent <strong class="badges-added"></strong> badges to your
+      Open Badges Backpack.
+    </p>
+    <p class="lead">
+      Visit your <a href="/" target="_blank">Backpack</a> to manage
+      and share your open badges.
+    </p>
+    <button class="next btn btn-primary">Thanks</button>
   </div>
   <div id="badge-ask" style="display: none">
   </div>
@@ -96,15 +113,15 @@
   </div>
   <div id="badge-ask-template" style="display: none">
     <div class="row">
-      <div class="span4 columns management">
-        <div class="accept-reject">
-          <h2>Accept this badge?</h2>
-          <button class="accept btn btn-primary">Yup</button>
-          <button class="reject btn btn-danger">Nope</button>
-        </div>
+      <div class="header span8">
+        <h2>Accept this badge?</h2>
+        <button class="accept btn btn-primary">Yes</button>
+        <button class="reject btn btn-danger">No</button>
+      </div>
+      <div class="span3 columns management">
         <img class="badge-image" src="[[assertion.badge.image]]" alt="Badge Image"/>
       </div>
-      <div class="span4 columns badge-details">
+      <div class="span5 columns badge-details">
         <dl>
           <dt>Recipient</dt>
 	        <dd>[[ unhashedRecipient ]]</dd>
@@ -148,3 +165,4 @@
     });
   </script>
 {% endif %}
+</body>
