@@ -169,11 +169,10 @@ app.post('/api/issue', backpackConnect.authorize("issue"),
 app.get('/api/identity', backpackConnect.authorize("issue"),
                          backpackConnect.hashIdentity());
 
-if (!module.parent) {
-  var start_server = function start_server(app) {
+var start_server = function start_server(app) {
     var port = app.config.get('port');
-    //var pid = process.pid.toString();
-    //var pidfile = path.join(app.config.get('var_path'), 'server.pid');
+    var pid = process.pid.toString();
+    var pidfile = path.join(app.config.get('var_path'), 'server.pid');
 
     app.listen(port);
     app.logger.info('environment: ' + process.env['NODE_ENV']);

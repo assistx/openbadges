@@ -370,7 +370,8 @@ exports.userBadgeUpload = function userBadgeUpload(req, res) {
   const user = req.user;
   const tmpfile = req.files.userBadge;
   const awardOptions = {recipient: user.get('email')};
-  delete request.session.azureacsassertions;
+  if (request.session)
+  	delete request.session.azureacsassertions;
 
   // While the openbadges assertion specification doesn't specify a size
   // limit, our backpack does. We don't want to store lots of huge images,

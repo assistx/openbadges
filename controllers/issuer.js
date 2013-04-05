@@ -115,11 +115,11 @@ function isValidInput(input) {
   return validUrl(input) || validator.isSignedBadge(input)
 }
 exports.frameless = function (req, res) {
-  var assertions = req.body.assertions || req.session.azureacsassertions [];
+  var assertions = req.body.assertions || req.session.azureacsassertions || [];
   assertions = (typeof assertions === 'string')
     ? [assertions]
     : assertions;
-  req.session.azureacsassertions = assertionUrls;
+  req.session.azureacsassertions = assertions;
   for (var i = 0, assertion; assertion = assertions[i]; i++) {
     if (!isValidInput(assertion)) {
       logger.error("malformed assertion " + assertion + " returning 400");
