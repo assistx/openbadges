@@ -44,7 +44,8 @@ exports.logOut = function logOut(req, res) {
     var logoutUrl = null;
     if (req.user && req.user.attributes.fed_id)
     {
-        logoutUrl = azureacsconfig.identityProviderUrl + "?wa=wsignout1.0&wreply=" + encodeURIComponent(require('./lib/configuration').get('protocol')+"://" + require('./lib/configuration').get('hostname'));
+        logoutUrl = azureacsconfig.identityProviderUrl + "?wa=wsignout1.0&wreply=" + encodeURIComponent(azureacsconfig.signoutReply);
+        console.log("LogoutUrl:", logoutUrl);
     }   
     req.session = {};
     req.logout();
