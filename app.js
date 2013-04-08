@@ -43,6 +43,7 @@ env.addFilter('formatdate', function (rawDate) {
 // Middleware. Also see `middleware.js`
 // ------------------------------------
 app.use(middleware.less(app.get('env')));
+app.use(express.limit('8mb'));
 app.use(express.static(path.join(__dirname, "static")));
 app.use(express.static(path.join(configuration.get('var_dir'), "badges")));
 app.use("/views", express.static(path.join(__dirname, "views")));
