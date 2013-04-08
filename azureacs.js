@@ -44,7 +44,7 @@ exports.logOut = function logOut(req, res) {
     var logoutUrl = null;
     if (req.user && req.user.attributes.fed_id)
     {
-        logoutUrl = azureacsconfig.identityProviderUrl + "?wa=wsignout1.0&wreply=" + encodeURIComponent("http://" + require('./lib/configuration').get('hostname'));
+        logoutUrl = azureacsconfig.identityProviderUrl + "?wa=wsignout1.0&wreply=" + encodeURIComponent(require('./lib/configuration').get('protocol')+"://" + require('./lib/configuration').get('hostname'));
     }   
     req.session = {};
     req.logout();
@@ -66,6 +66,12 @@ exports.initAzureACS = function (app) {
     });
     
     app.get('/issuer/frameless', require('./controllers/issuer').frameless);
+    
+    app.get('/auth/azureacs/callback', function(req, res) {
+       // we are probably only going to get here if things like wsignoutcleanup1.0 is called or something 
+       // we have already cleaned up, so just return empty
+       res.send("wsignoutcleanup1.0 completed");
+    });
     
     app.post('/auth/azureacs/callback',
         passport.authenticate('wsfed-saml2', { failureRedirect: '/fail', failureFlash: true }),
@@ -107,7 +113,7 @@ exports.initAzureACS = function (app) {
     });
 
     app.get('/auth/azureacs/logout', function(req, res){
-
+        require('./azureacs').logOut(req,res);
     });
     
     app.get('/auth/azureacs/destroy', function(req, res) {
