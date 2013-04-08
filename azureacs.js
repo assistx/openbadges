@@ -47,8 +47,16 @@ exports.logOut = function logOut(req, res) {
         logoutUrl = azureacsconfig.identityProviderUrl + "?wa=wsignout1.0&wreply=" + encodeURIComponent(azureacsconfig.signoutReply);
         console.log("LogoutUrl:", logoutUrl);
     }   
+    
+    var assertions = null;
+    if (req.session && req.session.azureacsassertions)
+        assertions = req.session.azureacsassertions;
+        
     req.session = {};
     req.logout();
+    
+    if (assertions)
+        req.session.azureacsassertions = assertions;
     
     if (logoutUrl)
         res.redirect(303, logoutUrl);  
