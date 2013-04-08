@@ -84,9 +84,9 @@ exports.authenticate = function authenticate(req, res) {
  */
 
 exports.signout = function signout(request, response) {
-  request.session = {};
-  request.logout();
-  response.redirect(303, '/backpack/login');
+  //request.session = {};
+  require('../azureacs').logOut(request, response);
+  //response.redirect(303, '/backpack/login');
 };
 
 /**

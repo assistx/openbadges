@@ -57,10 +57,17 @@ User.findOrCreate = function (email, callback) {
 User.findOrCreateByFedId = function(identity, callback) {
   var email = identity.email ? identity.email : (require('crypto').randomBytes(16).toString('hex')) + '@no.email';
   var active = identity.email ? true : false;
-  var newUser = new User({ email: email, fed_id: identity.federated_id, active: active });
+  var newUser = new User({ email: email, fed_id: identity.federated_id, active: active, fed_issuer: identity.fed_issuer });
   User.findOne({ fed_id: identity.federated_id }, function (err, user) {
     if (err) { return callback(err); }
-    if (user) { return callback(null, user); }
+    if (user) {  
+        if (!user.fed_issuer) {
+            user.attributes.fed_issuer = identity.fed_issuer;
+            user.save();
+        }
+        
+        return callback(null, user); 
+    }
     else { return newUser.save(callback); }
   });
 };

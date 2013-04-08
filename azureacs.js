@@ -40,6 +40,21 @@ passport.deserializeUser(function(user, done) {
     }
 });
 
+exports.logOut = function logOut(req, res) {
+    var logoutUrl = null;
+    if (req.user && req.user.attributes.fed_id)
+    {
+        logoutUrl = azureacsconfig.identityProviderUrl + "?wa=wsignout1.0&wreply=" + encodeURIComponent("http://" + require('./lib/configuration').get('hostname'));
+    }   
+    req.session = {};
+    req.logout();
+    
+    if (logoutUrl)
+        res.redirect(303, logoutUrl);  
+    else
+        res.redirect(303, '/backpack/login');
+};
+
 exports.initAzureACS = function (app) {
     app.use(passport.initialize());
     app.use(passport.session());
@@ -92,13 +107,7 @@ exports.initAzureACS = function (app) {
     });
 
     app.get('/auth/azureacs/logout', function(req, res){
-        req.logout();
-        req.session.emails = [];
-        
-        if (req.session.azureacsassertions)
-            res.redirect('/issuer/frameless');
-        else
-            res.redirect('/');
+
     });
     
     app.get('/auth/azureacs/destroy', function(req, res) {
@@ -214,9 +223,10 @@ function findOrCreateById(fedid, callback) {
 function getFedId(identity) {
     var nameidentifier = 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier';
     var emailaddress = 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress';
+    var identityprovider = 'http://schemas.microsoft.com/accesscontrolservice/2010/07/claims/identityprovider';
     
     if (identity.issuer == 'https://obiissuer.accesscontrol.windows.net/') {
-        var newId = { 'federated_id': identity[nameidentifier], 'email': identity[emailaddress] };
+        var newId = { 'federated_id': identity[nameidentifier], 'email': identity[emailaddress], 'fed_issuer': identity[identityprovider] };
         //console.log("newId", newId);
         return newId;
     } else {
@@ -227,8 +237,6 @@ function getFedId(identity) {
 function strEndsWith(str, suffix) {
     return str.match(suffix+"$")==suffix;
 }
-
-
 
 
 
