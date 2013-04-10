@@ -126,95 +126,95 @@ exports.initAzureACS = function (app) {
     });
     
     app.get('/auth/azureacs/destroy', function(req, res) {
-    	var email = null;
-    	var Group = require('./models/group');
-    	var Portfolio = require('./models/portfolio');
-    	var Badge = require('./models/badge');
-    	
-    	if (req.session && req.session.emails && req.session.emails[0]) {
-    		email = req.session.emails[0];
-    	} else if (req.user && req.user.email) {
-    		email = req.user.email;
-    	} else if (req.query['email']) {
-    		email = req.query['email'];
-    	} else {
-    		res.send("Error - no account specified, please login");
-    		res.end();
-    	}
-    	
-    	User.findOne({ email: email }, function (err, user) {
-		    if (err) { res.send("Error - unable to get user " + err); res.end(); }
-    		if (!user) { res.send("Error - unable to find user " + err); res.end(); }
-    		else { 
-    			Group.find({ user_id: user.attributes.id }, function (err, groups){
-    				if (err) { res.send("Error - unable to get groups " + err); res.end(); }
-    				if (groups.length > 0) {   		
-    					var groupCount = 0;		
-    					groups.forEach(function(group) {
-    						++groupCount;
-    						Portfolio.find({group_id: group.attributes.id}, function(err, portfolios) {
-    							if (err) { res.send("Error - unable to get portfolios " + err); res.end(); }  
-    							if (portfolios.length > 0) {
-    								var portfolioCount = 0;
-    								portfolios.forEach(function(portfolio) {
-    									++portfolioCount;
-    									portfolio.destroy(function(err) {
-    										if (err) { res.send("Error - unable to remove portfolio " + err); res.end(); }
-    										if (--portfolioCount === 0) { 
-    											removeGroup(function(err) {
-    												if (err) { res.send("Error - unable to remove group " + err); res.end(); }
-    												if (--groupCount === 0) { removeBadges(); }
-    											});    	
-    										}										
-    									});
-    								});
-    							} else {
-    								removeGroup(function(err) {
-    									if (err) { res.send("Error - unable to group " + err); res.end(); }
-    									if (--groupCount === 0) { removeBadges(); }
-    								});
-    							}
-    						});	
-    						
-		 					function removeGroup(callback) {
-		 						group.destroy(callback);
- 							}
-    					});
-    				} else {
-    					removeBadges();
- 					}
-    			});
-    		}
-    		
-    		function removeBadges() {
-	    		Badge.find({ user_id: user.attributes.id }, function(err, badges) {
-    				if (err) { res.send("Error - unable to get badges " + err); res.end(); }  
-    				if (badges.length > 0) {
-    					var badgeCount = 0;
-    					badges.forEach(function(badge) {
-    						++badgeCount;
-    						badge.destroy(function(err) {
-   	 							if (err) { res.send("Error - unable to delete badge " + err); res.end(); } 
-    							if (--badgeCount === 0) { 
-				     				removeUser();     						
-    							} 
-    						});
-    					});
-	    			} else {
-    	 				removeUser(); 
-    				}
-    			});
-    		}
-    		
-    		function removeUser(callback) {
-    			user.destroy(function(err) {
-    				if (err) { res.send("Error - unable to remove user " + err); res.end(); }
-    				req.logout();
-        			req.session.emails = [];
-                	res.redirect('/');
-    			});
-    		}
-  		});
+        var email = null;
+        var Group = require('./models/group');
+        var Portfolio = require('./models/portfolio');
+        var Badge = require('./models/badge');
+        
+        if (req.session && req.session.emails && req.session.emails[0]) {
+            email = req.session.emails[0];
+        } else if (req.user && req.user.email) {
+            email = req.user.email;
+        } else if (req.query['email']) {
+            email = req.query['email'];
+        } else {
+            res.send("Error - no account specified, please login");
+            res.end();
+        }
+        
+        User.findOne({ email: email }, function (err, user) {
+            if (err) { res.send("Error - unable to get user " + err); res.end(); }
+            if (!user) { res.send("Error - unable to find user " + err); res.end(); }
+            else { 
+                Group.find({ user_id: user.attributes.id }, function (err, groups){
+                    if (err) { res.send("Error - unable to get groups " + err); res.end(); }
+                    if (groups.length > 0) { 
+                        var groupCount = 0;		
+                        groups.forEach(function(group) {
+                            ++groupCount;
+                            Portfolio.find({group_id: group.attributes.id}, function(err, portfolios) {
+                                if (err) { res.send("Error - unable to get portfolios " + err); res.end(); }  
+                                if (portfolios.length > 0) {
+                                    var portfolioCount = 0;
+                                    portfolios.forEach(function(portfolio) {
+                                        ++portfolioCount;
+                                        portfolio.destroy(function(err) {
+                                            if (err) { res.send("Error - unable to remove portfolio " + err); res.end(); }
+                                            if (--portfolioCount === 0) { 
+                                                removeGroup(function(err) {
+                                                    if (err) { res.send("Error - unable to remove group " + err); res.end(); }
+                                                    if (--groupCount === 0) { removeBadges(); }
+                                                });
+                                            }										
+                                        });
+                                    });
+                                } else {
+                                    removeGroup(function(err) {
+                                        if (err) { res.send("Error - unable to group " + err); res.end(); }
+                                        if (--groupCount === 0) { removeBadges(); }
+                                    });
+                                }
+                            });	
+                            
+                            function removeGroup(callback) {
+                                group.destroy(callback);
+                            }
+                        });
+                    } else {
+                        removeBadges();
+                    }
+                });
+            }
+            
+            function removeBadges() {
+                Badge.find({ user_id: user.attributes.id }, function(err, badges) {
+                    if (err) { res.send("Error - unable to get badges " + err); res.end(); }  
+                    if (badges.length > 0) {
+                        var badgeCount = 0;
+                        badges.forEach(function(badge) {
+                            ++badgeCount;
+                            badge.destroy(function(err) {
+                                if (err) { res.send("Error - unable to delete badge " + err); res.end(); } 
+                                if (--badgeCount === 0) { 
+                                     removeUser();
+                                } 
+                            });
+                        });
+                    } else {
+                        removeUser(); 
+                    }
+                });
+            }
+            
+            function removeUser(callback) {
+                user.destroy(function(err) {
+                    if (err) { res.send("Error - unable to remove user " + err); res.end(); }
+                    req.logout();
+                    req.session.emails = [];
+                    res.redirect('/');
+                });
+            }
+        });
     });
 };
 
