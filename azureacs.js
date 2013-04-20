@@ -7,7 +7,13 @@ var azureacsconfig = require('./lib/configuration').get('azureacs');
 passport.use(new wsfedsaml2( 
     azureacsconfig,
     function(identity, done) {
-        return findOrCreateById(getFedId(identity), done);
+        return findOrCreateById(getFedId(identity), function(err, user, info) {
+           if (err) {
+               done(err, null, info);
+           } else {
+               done(null, user, info);
+           }
+        });
     }
 ));
 
@@ -69,7 +75,7 @@ exports.initAzureACS = function (app) {
     app.use(passport.session());
     
     app.get('/auth/azureacs',
-        passport.authenticate('wsfed-saml2', { failureRedirect: '/fail', failureFlash: true }),
+        passport.authenticate('wsfed-saml2', { failureRedirect: '/', failureFlash: true }),
         function(req, res) {
             res.redirect('/');
     });
@@ -82,21 +88,27 @@ exports.initAzureACS = function (app) {
        res.send("wsignoutcleanup1.0 completed");
     });
     
-    app.post('/auth/azureacs/callback',
-        passport.authenticate('wsfed-saml2', { failureRedirect: '/fail', failureFlash: true }),
-        function(req, res) {
-            if (strEndsWith(req.user.get('email'), "@no.email")) {
-                Logger.debug("(Azure ACS) Need to register email");
-                res.render('azure-register.html', { error: req.flash('error'), csrfToken: req.session._csrf });
-            } else {
-                req.session.emails = [ req.user.get('email') ];
-                
-                if (req.session.azureacsassertions) {
-                    res.redirect('/issuer/frameless?'+ Date.now());
+    app.post('/auth/azureacs/callback', function(req, res, next) {
+        passport.authenticate('wsfed-saml2', function(err, user, info) {
+            if (err) { return res.render('errors/401.html', { csrfToken: req.session._csrf, errorReason: err });  }
+            if (info && info.message) { return res.render('errors/401.html', { csrfToken: req.session._csrf, errorReason: info.message });  }
+            if (!user) { req.flash('error', 'Unknown Error (could not find or create user)'); return res.render('errors/401.html', { error: req.flash('error'), csrfToken: req.session._csrf, errorReason: err });  }
+            req.logIn(user, function(err) {
+                if (err) { return res.render('errors/401.html', { csrfToken: req.session._csrf, errorReason: err });  }
+                if (strEndsWith(req.user.get('email'), "@no.email")) {
+                    Logger.debug("(Azure ACS) Need to register email");
+                    res.render('azure-register.html', { error: req.flash('error'), csrfToken: req.session._csrf });
                 } else {
-                    res.redirect('/');
+                    req.session.emails = [ req.user.get('email') ];
+                
+                    if (req.session.azureacsassertions) {
+                        res.redirect('/issuer/frameless?'+ Date.now());
+                    } else {
+                        res.redirect('/');
+                    }
                 }
-            }
+            });
+        })(req, res, next);
     });
     
     app.post('/auth/azureacs/register', function(req, res){
@@ -220,13 +232,13 @@ exports.initAzureACS = function (app) {
 
 function findOrCreateById(fedid, callback) {
     if (fedid) {
-        User.findOrCreateByFedId(fedid, function (err, user) {
+        User.findOrCreateByFedId(fedid, function (err, user, info) {
             if (err) {
                 Logger.error("(Azure ACS) Problem finding/creating user:");
                 Logger.error(err);
-                return callback(err, null);
+                return callback(err, null, info);
             } else {
-                return callback(null, user);
+                return callback(null, user, info);
             }
         });  
     } else {

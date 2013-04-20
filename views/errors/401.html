@@ -1,0 +1,11 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+<div class="hero-unit">
+  <h1>Unauthorized</h1>
+  <p>Unfortunately there was a problem with your login.</p>
+  <p><strong>The reason:</strong></p>
+  <p>{{ errorReason }}</p>
+  <p><a href="/auth/azureacs/logout" class="btn btn-large">Logout</a> and try again.</p>
+</div>
+{% endblock %}
