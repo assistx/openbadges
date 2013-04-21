@@ -7,7 +7,13 @@ var azureacsconfig = require('./lib/configuration').get('azureacs');
 passport.use(new wsfedsaml2( 
     azureacsconfig,
     function(identity, done) {
-        return findOrCreateById(getFedId(identity), done);
+        return findOrCreateById(getFedId(identity), function(err, user, info) {
+           if (err) {
+               done(err, null, info);
+           } else {
+               done(null, user, info);
+           }
+        });
     }
 ));
 
@@ -44,7 +50,7 @@ exports.logOut = function logOut(req, res) {
     var logoutUrl = null;
     if (req.user && req.user.attributes.fed_id)
     {
-        logoutUrl = azureacsconfig.identityProviderUrl + "?wa=wsignout1.0&wreply=" + encodeURIComponent(azureacsconfig.signoutReply);
+        logoutUrl = azureacsconfig.identityProviderUrl + "?wa=wsignout1.0&wreply=" + encodeURIComponent(azureacsconfig.signoutReply) + "&wtrealm=" + encodeURIComponent(azureacsconfig.realm);
         console.log("LogoutUrl:", logoutUrl);
     }   
     
@@ -69,7 +75,7 @@ exports.initAzureACS = function (app) {
     app.use(passport.session());
     
     app.get('/auth/azureacs',
-        passport.authenticate('wsfed-saml2', { failureRedirect: '/fail', failureFlash: true }),
+        passport.authenticate('wsfed-saml2', { failureRedirect: '/', failureFlash: true }),
         function(req, res) {
             res.redirect('/');
     });
@@ -82,21 +88,27 @@ exports.initAzureACS = function (app) {
        res.send("wsignoutcleanup1.0 completed");
     });
     
-    app.post('/auth/azureacs/callback',
-        passport.authenticate('wsfed-saml2', { failureRedirect: '/fail', failureFlash: true }),
-        function(req, res) {
-            if (strEndsWith(req.user.get('email'), "@no.email")) {
-                Logger.debug("(Azure ACS) Need to register email");
-                res.render('azure-register.html', { error: req.flash('error'), csrfToken: req.session._csrf });
-            } else {
-                req.session.emails = [ req.user.get('email') ];
-                
-                if (req.session.azureacsassertions) {
-                    res.redirect('/issuer/frameless?'+ Date.now());
+    app.post('/auth/azureacs/callback', function(req, res, next) {
+        passport.authenticate('wsfed-saml2', function(err, user, info) {
+            if (err) { return res.render('errors/401.html', { csrfToken: req.session._csrf, errorReason: err });  }
+            if (info && info.message) { return res.render('errors/401.html', { csrfToken: req.session._csrf, errorReason: info.message });  }
+            if (!user) { req.flash('error', 'Unknown Error (could not find or create user)'); return res.render('errors/401.html', { error: req.flash('error'), csrfToken: req.session._csrf, errorReason: err });  }
+            req.logIn(user, function(err) {
+                if (err) { return res.render('errors/401.html', { csrfToken: req.session._csrf, errorReason: err });  }
+                if (strEndsWith(req.user.get('email'), "@no.email")) {
+                    Logger.debug("(Azure ACS) Need to register email");
+                    res.render('azure-register.html', { error: req.flash('error'), csrfToken: req.session._csrf });
                 } else {
-                    res.redirect('/');
+                    req.session.emails = [ req.user.get('email') ];
+                
+                    if (req.session.azureacsassertions) {
+                        res.redirect('/issuer/frameless?'+ Date.now());
+                    } else {
+                        res.redirect('/');
+                    }
                 }
-            }
+            });
+        })(req, res, next);
     });
     
     app.post('/auth/azureacs/register', function(req, res){
@@ -126,107 +138,107 @@ exports.initAzureACS = function (app) {
     });
     
     app.get('/auth/azureacs/destroy', function(req, res) {
-    	var email = null;
-    	var Group = require('./models/group');
-    	var Portfolio = require('./models/portfolio');
-    	var Badge = require('./models/badge');
-    	
-    	if (req.session && req.session.emails && req.session.emails[0]) {
-    		email = req.session.emails[0];
-    	} else if (req.user && req.user.email) {
-    		email = req.user.email;
-    	} else if (req.query['email']) {
-    		email = req.query['email'];
-    	} else {
-    		res.send("Error - no account specified, please login");
-    		res.end();
-    	}
-    	
-    	User.findOne({ email: email }, function (err, user) {
-		    if (err) { res.send("Error - unable to get user " + err); res.end(); }
-    		if (!user) { res.send("Error - unable to find user " + err); res.end(); }
-    		else { 
-    			Group.find({ user_id: user.attributes.id }, function (err, groups){
-    				if (err) { res.send("Error - unable to get groups " + err); res.end(); }
-    				if (groups.length > 0) {   		
-    					var groupCount = 0;		
-    					groups.forEach(function(group) {
-    						++groupCount;
-    						Portfolio.find({group_id: group.attributes.id}, function(err, portfolios) {
-    							if (err) { res.send("Error - unable to get portfolios " + err); res.end(); }  
-    							if (portfolios.length > 0) {
-    								var portfolioCount = 0;
-    								portfolios.forEach(function(portfolio) {
-    									++portfolioCount;
-    									portfolio.destroy(function(err) {
-    										if (err) { res.send("Error - unable to remove portfolio " + err); res.end(); }
-    										if (--portfolioCount === 0) { 
-    											removeGroup(function(err) {
-    												if (err) { res.send("Error - unable to remove group " + err); res.end(); }
-    												if (--groupCount === 0) { removeBadges(); }
-    											});    	
-    										}										
-    									});
-    								});
-    							} else {
-    								removeGroup(function(err) {
-    									if (err) { res.send("Error - unable to group " + err); res.end(); }
-    									if (--groupCount === 0) { removeBadges(); }
-    								});
-    							}
-    						});	
-    						
-		 					function removeGroup(callback) {
-		 						group.destroy(callback);
- 							}
-    					});
-    				} else {
-    					removeBadges();
- 					}
-    			});
-    		}
-    		
-    		function removeBadges() {
-	    		Badge.find({ user_id: user.attributes.id }, function(err, badges) {
-    				if (err) { res.send("Error - unable to get badges " + err); res.end(); }  
-    				if (badges.length > 0) {
-    					var badgeCount = 0;
-    					badges.forEach(function(badge) {
-    						++badgeCount;
-    						badge.destroy(function(err) {
-   	 							if (err) { res.send("Error - unable to delete badge " + err); res.end(); } 
-    							if (--badgeCount === 0) { 
-				     				removeUser();     						
-    							} 
-    						});
-    					});
-	    			} else {
-    	 				removeUser(); 
-    				}
-    			});
-    		}
-    		
-    		function removeUser(callback) {
-    			user.destroy(function(err) {
-    				if (err) { res.send("Error - unable to remove user " + err); res.end(); }
-    				req.logout();
-        			req.session.emails = [];
-                	res.redirect('/');
-    			});
-    		}
-  		});
+        var email = null;
+        var Group = require('./models/group');
+        var Portfolio = require('./models/portfolio');
+        var Badge = require('./models/badge');
+        
+        if (req.session && req.session.emails && req.session.emails[0]) {
+            email = req.session.emails[0];
+        } else if (req.user && req.user.email) {
+            email = req.user.email;
+        } else if (req.query['email']) {
+            email = req.query['email'];
+        } else {
+            res.send("Error - no account specified, please login");
+            res.end();
+        }
+        
+        User.findOne({ email: email }, function (err, user) {
+            if (err) { res.send("Error - unable to get user " + err); res.end(); }
+            if (!user) { res.send("Error - unable to find user " + err); res.end(); }
+            else { 
+                Group.find({ user_id: user.attributes.id }, function (err, groups){
+                    if (err) { res.send("Error - unable to get groups " + err); res.end(); }
+                    if (groups.length > 0) { 
+                        var groupCount = 0;		
+                        groups.forEach(function(group) {
+                            ++groupCount;
+                            Portfolio.find({group_id: group.attributes.id}, function(err, portfolios) {
+                                if (err) { res.send("Error - unable to get portfolios " + err); res.end(); }  
+                                if (portfolios.length > 0) {
+                                    var portfolioCount = 0;
+                                    portfolios.forEach(function(portfolio) {
+                                        ++portfolioCount;
+                                        portfolio.destroy(function(err) {
+                                            if (err) { res.send("Error - unable to remove portfolio " + err); res.end(); }
+                                            if (--portfolioCount === 0) { 
+                                                removeGroup(function(err) {
+                                                    if (err) { res.send("Error - unable to remove group " + err); res.end(); }
+                                                    if (--groupCount === 0) { removeBadges(); }
+                                                });
+                                            }										
+                                        });
+                                    });
+                                } else {
+                                    removeGroup(function(err) {
+                                        if (err) { res.send("Error - unable to group " + err); res.end(); }
+                                        if (--groupCount === 0) { removeBadges(); }
+                                    });
+                                }
+                            });	
+                            
+                            function removeGroup(callback) {
+                                group.destroy(callback);
+                            }
+                        });
+                    } else {
+                        removeBadges();
+                    }
+                });
+            }
+            
+            function removeBadges() {
+                Badge.find({ user_id: user.attributes.id }, function(err, badges) {
+                    if (err) { res.send("Error - unable to get badges " + err); res.end(); }  
+                    if (badges.length > 0) {
+                        var badgeCount = 0;
+                        badges.forEach(function(badge) {
+                            ++badgeCount;
+                            badge.destroy(function(err) {
+                                if (err) { res.send("Error - unable to delete badge " + err); res.end(); } 
+                                if (--badgeCount === 0) { 
+                                     removeUser();
+                                } 
+                            });
+                        });
+                    } else {
+                        removeUser(); 
+                    }
+                });
+            }
+            
+            function removeUser(callback) {
+                user.destroy(function(err) {
+                    if (err) { res.send("Error - unable to remove user " + err); res.end(); }
+                    req.logout();
+                    req.session.emails = [];
+                    res.redirect('/');
+                });
+            }
+        });
     });
 };
 
 function findOrCreateById(fedid, callback) {
     if (fedid) {
-        User.findOrCreateByFedId(fedid, function (err, user) {
+        User.findOrCreateByFedId(fedid, function (err, user, info) {
             if (err) {
                 Logger.error("(Azure ACS) Problem finding/creating user:");
                 Logger.error(err);
-                return callback(err, null);
+                return callback(err, null, info);
             } else {
-                return callback(null, user);
+                return callback(null, user, info);
             }
         });  
     } else {

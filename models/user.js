@@ -68,7 +68,29 @@ User.findOrCreateByFedId = function(identity, callback) {
         
         return callback(null, user); 
     }
-    else { return newUser.save(callback); }
+    else { 
+        if (email) {
+            User.findOne({ email: email }, function(err, user) {
+               if (err) { return callback(null, false, { message: err }); }
+               if (user.attributes.fed_issuer) {
+                    var loginMethod = "Persona";
+                    if (user.attributes.fed_issuer.indexOf("WindowsLiveID") > -1)
+                        loginMethod = "Windows LiveID";
+                    else if (user.attributes.fed_issuer.indexOf("Facebook") > -1)
+                        loginMethod = "Facebook";
+                    else if (user.attributes.fed_issuer.indexOf("Yahoo") > -1)
+                        loginMethod = "Yahoo";
+                    else if (user.attributes.fed_issuer.indexOf("Google") > -1)
+                        loginMethod = "Google";
+                   callback(null, false, { message: "The email address " + email + " already exists in the database for the login method " + loginMethod + ". Please logout and attempt to login using that provider." });
+               } else {
+                   return newUser.save(callback);
+               }
+            });
+        } else {
+            return newUser.save(callback); 
+        }
+    }
   });
 };
 
