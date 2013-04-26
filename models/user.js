@@ -72,7 +72,7 @@ User.findOrCreateByFedId = function(identity, callback) {
         if (email) {
             User.findOne({ email: email }, function(err, user) {
                if (err) { return callback(null, false, { message: err }); }
-               if (user.attributes.fed_issuer) {
+               if (user && user.attributes.fed_issuer) {
                     var loginMethod = "Persona";
                     if (user.attributes.fed_issuer.indexOf("WindowsLiveID") > -1)
                         loginMethod = "Windows LiveID";
