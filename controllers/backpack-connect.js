@@ -100,6 +100,8 @@ function requestAccess(req, res) {
   if (scopeErr)
     return res.send('invalid scope: ' + scopeErr, 400);
   
+  req.session.backpackConnect = req.query.callback;
+  
   return res.render('backpack-connect.html', {
     clientDomain: parsed.hostname,
     csrfToken: req.session._csrf,
