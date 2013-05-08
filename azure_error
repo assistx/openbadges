@@ -1,0 +1,29 @@
+Mon May 06 2013 13:34:51 GMT-0700 (PDT):
+{ [Error: No account information found. Please import credentials using "azure account import <file>".]
+  stack: [Getter/Setter],
+  __frame: 
+   { name: 'site_doSitesGet__16',
+     line: 972,
+     file: '/usr/local/lib/node_modules/azure-cli/lib/commands/site._js',
+     prev: 
+      { name: 'lookupSiteWebSpace',
+        line: 573,
+        file: '/usr/local/lib/node_modules/azure-cli/lib/commands/site._js',
+        prev: [Object],
+        active: false,
+        offset: 2,
+        col: 16 },
+     active: false,
+     offset: 3,
+     col: 17 },
+  rawStack: [Getter] }
+Error: No account information found. Please import credentials using "azure account import <file>".
+    at Object.readFromFile (/usr/local/lib/node_modules/azure-cli/lib/keyFiles.js:32:11)
+    at Command.exports.init.account.managementCertificate (/usr/local/lib/node_modules/azure-cli/lib/commands/account.js:466:21)
+    at getChannel (/usr/local/lib/node_modules/azure-cli/lib/commands/site._js:40:23)
+    at site_doSpacesGet__15 (/usr/local/lib/node_modules/azure-cli/lib/commands/site._js:939:26)
+    at site_doSitesGet__16 (/usr/local/lib/node_modules/azure-cli/lib/commands/site._js:975:17)
+    at lookupSiteWebSpace (/usr/local/lib/node_modules/azure-cli/lib/commands/site._js:575:16)
+    at lookupSiteNameAndWebSpace (/usr/local/lib/node_modules/azure-cli/lib/commands/site._js:594:4)
+    at ensureRepositoryUri (/usr/local/lib/node_modules/azure-cli/lib/commands/site._js:662:19)
+    at __2 (/usr/local/lib/node_modules/azure-cli/lib/commands/log._js:84:26)
