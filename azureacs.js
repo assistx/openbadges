@@ -103,6 +103,8 @@ exports.initAzureACS = function (app) {
                 
                     if (req.session.azureacsassertions) {
                         res.redirect('/issuer/frameless?'+ Date.now());
+                    } else if (req.session.backpackConnect) {
+                        res.redirect('/access?scope=issue&callback=' + req.session.backpackConnect);  
                     } else {
                         res.redirect('/');
                     }

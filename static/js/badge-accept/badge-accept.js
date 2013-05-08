@@ -198,6 +198,7 @@ var App = function App(assertions, spec) {
   var build = spec.build || function(assertion) {
     var build = jQuery.Deferred();
     jQuery.ajax({
+      type: 'POST',
       url: '/issuer/assertion',
       data: {
         assertion: assertion
