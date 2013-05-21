@@ -5,12 +5,15 @@ const fs = require('fs');
 const async = require('async');
 const url = require('url');
 const bakery = require('openbadges-bakery');
+const validator = require('openbadges-validator');
 
 const logger = require('../lib/logging').logger;
 const configuration = require('../lib/configuration');
 const browserid = require('../lib/browserid');
 const awardBadge = require('../lib/award');
 const analyzeAssertion = require('../lib/analyze-assertion');
+const normalizeAssertion = require('../lib/normalize-assertion');
+const regex = require('../lib/regex.js');
 const Badge = require('../models/badge');
 const Group = require('../models/group');
 const User = require('../models/user');
@@ -353,7 +356,7 @@ exports.addBadge = function addBadge(request, response) {
 exports.userBadgeUpload = function userBadgeUpload(req, res) {
   function redirect(err, redirect) {
     if (!redirect) {
-      redirect = '/backpack/add'
+      redirect = '/backpack/add';
     }
     if (err) {
       logger.warn('There was an error uploading a badge');
@@ -371,8 +374,8 @@ exports.userBadgeUpload = function userBadgeUpload(req, res) {
   const tmpfile = req.files.userBadge;
   const awardOptions = {recipient: user.get('email')};
   if (request.session)
-  	delete request.session.azureacsassertions;
-
+    delete request.session.azureacsassertions;
+    
   // While the openbadges assertion specification doesn't specify a size
   // limit, our backpack does. We don't want to store lots of huge images,
   // and badges really shouldn't be larger than 256k so that's what we're
@@ -380,14 +383,14 @@ exports.userBadgeUpload = function userBadgeUpload(req, res) {
   const MAX_IMAGE_SIZE = 1024*256;
 
   if (!user)
-    return response.redirect(303, '/');
-
+    return res.redirect(303, '/');
+    
   if (!tmpfile.size)
     return redirect(new Error('You must choose a badge to upload.'));
-
+    
   if (tmpfile.size > MAX_IMAGE_SIZE)
     return redirect(new Error('Maximum badge size is ' + MAX_IMAGE_SIZE / 1024 + 'KB'));
-
+    
   async.waterfall([
     function getBadgeImageData(callback) {
       fs.readFile(tmpfile.path, callback);
@@ -397,12 +400,15 @@ exports.userBadgeUpload = function userBadgeUpload(req, res) {
       bakery.extract(imageData, callback);
     },
     function getAssertionData(url, callback) {
-      awardOptions.url = url;
+      if (validator.isSignedBadge(url))
+        awardOptions.signature = url;
+      if (validUrl(url))
+        awardOptions.url = url;
       analyzeAssertion(url, callback);
     },
     function confirmAndAward(info, callback) {
       const recipient = awardOptions.recipient;
-      const assertion = info.structures.assertion;
+      const assertion = normalizeAssertion(info);
       const userOwnsBadge = Badge.confirmRecipient(assertion, recipient);
       if (!userOwnsBadge) {
         const err = new Error('This badge was not issued to you! Contact your issuer.');
@@ -426,4 +432,16 @@ exports.details = function details (request, response) {
 
 exports.deleteBadge = function deleteBadge (request, response) {
   return;
+}
+
+function validUrl(url) {
+  if (regex.url.test(url))
+    return true;
+  // Occasionally we get requests where the URL is double-encoded, so it
+  // remains encoded even after express does one pass of decoding. To
+  // handle those cases we try one more pass of decoding before giving
+  // up and rejecting the URL.
+  if (regex.url.test(decodeURIComponent(url)))
+    return true;
+  return false;
 }
