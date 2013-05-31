@@ -4,8 +4,8 @@ var type = dbm.dataType;
 
 exports.up = function(db, callback) {
   async.series([
-    addColumnIfNeeded(db, 'user', 'fed_id', 'ALTER TABLE `user` ADD fed_id varchar(255) DEFAULT NULL UNIQUE'),
-    addColumnIfNeeded(db, 'user', 'fed_id', 'ALTER TABLE `user` ADD fed_issuer varchar(255) DEFAULT NULL'),
+    function(cb) { addColumnIfNeeded(db, 'user', 'fed_id', 'ALTER TABLE `user` ADD fed_id varchar(255) DEFAULT NULL UNIQUE', cb); },
+    function(cb) { addColumnIfNeeded(db, 'user', 'fed_id', 'ALTER TABLE `user` ADD fed_issuer varchar(255) DEFAULT NULL', cb); },
   ], callback);
 };
 
@@ -18,7 +18,7 @@ exports.down = function(db, callback) {
   ], callback);
 };
 
-function addColumnIfNeeded(database, tableName, columnName, alterTableCommand) {
+function addColumnIfNeeded(database, tableName, columnName, alterTableCommand, callback) {
     try {
         console.log("checking for column...", columnName);
         database.runSql.bind(database, 'select ' + columnName + ' from `' + tableName + '` limit 1');
@@ -27,4 +27,5 @@ function addColumnIfNeeded(database, tableName, columnName, alterTableCommand) {
         console.log("not found, adding", err);
         database.runSql.bind(database, alterTableCommand);
     }
+    callback();
 }
