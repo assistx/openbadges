@@ -66,12 +66,13 @@ app.use(middleware.csrf({
     '/displayer/convert/.+',
     '/issuer/frameless.*',
     '/api/.+',
-    '/auth/azureacs/callback'
+    '/auth/azureacs/callback',
+    '/tobi/accept'
   ]
 }));
 app.use(middleware.cors({ whitelist: ['/_badges.*', '/issuer.*', '/baker', '/displayer/.+/group.*'] }));
 require("./azureacs").initAzureACS(app);
-app.use(middleware.cors({ whitelist: ['/_badges.*', '/issuer.*', '/baker', '/displayer/.+/group.*'] }));
+require("./tobi").initTOBI(app);
 app.use(app.router);
 app.use(middleware.notFound());
 app.configure('development', function () {

@@ -1,0 +1,79 @@
+{% extends "layout.html" %}
+{% block head %}
+<style>
+a.logout {
+  display: block;
+  padding-top: 20px;
+}
+</style>
+{% endblock %}
+{% block body %}
+<h1><span class="client">{{ clientDomain }}</span> would like permission 
+  to:</h1>
+
+<ul>
+    <li>
+      To receive a copy of your badges automatically when they are added to your backpack.
+    </li>
+</ul>
+
+
+{% if not user %}
+
+<p>Want to create a Backpack?  
+  <a class="js-browserid-link" href="#">Sign up</a> to share your skills and interests, create badge collections, and more!</p>
+
+<a class="js-browserid-link" href="#">
+  <img src="https://browserid.org/i/sign_in_green.png"/>
+</a>
+
+<div style="padding-top: 10px">
+  <a href="/auth/azureacs" class="persona-button"><span>Sign in with Azure ACS</span></a>
+</div>
+
+{% else %}
+
+<form method="POST" action="/tobi/accepted">
+  <input name="_csrf" type="hidden" value="{{ csrfToken }}">
+  <button class="btn btn-primary" type="submit">Grant permission</button>
+  <a class="btn" href="{{ denyCallback }}">Deny permission</a>
+  <a href="/backpack/signout" class="logout">
+    I am not <span class="email">{{ user.attributes.email }}</span>.
+  </a>
+</form>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="https://login.persona.org/include.js"></script>
+<script src="/js/jquery.min.js"></script>
+<script>
+$(window).ready(function() {
+  var reloadPage = function() { window.location.reload(); };
+
+  $(document).ajaxError(function() {
+    alert("Sorry, an error occurred. Please try again later.");
+  });
+  
+  $('a[href="/backpack/signout"]').click(function() {
+    $.get($(this).attr("href"), reloadPage);
+    return false;
+  });
+
+  $(".js-browserid-link").click(function() {
+    navigator.id.get(function(assertion) {
+      if (!assertion) return;
+      $.ajax({
+        url: '/backpack/authenticate',
+        type: 'POST',
+        dataType: 'json',
+        data: {assertion: assertion},
+        headers: {'X-CSRF-Token': '{{ csrfToken }}'},
+        success: reloadPage
+      });
+    });
+    return false;
+  });
+});
+</script>
+{% endblock %}
