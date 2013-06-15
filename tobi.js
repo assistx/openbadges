@@ -14,8 +14,6 @@ function requestAccess(req, res) {
     return res.send('body expected', 400);
   if (!req.body.callback)
     return res.send('callback expected', 400);
-  if (!req.body.serviceNamespace)
-    return res.send('serviceNamespace expected', 400);
   if (!req.body.serviceKey)
     return res.send('serviceKey expected', 400);
 
