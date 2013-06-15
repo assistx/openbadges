@@ -27,8 +27,9 @@ function requestAccess(req, res) {
   
   req.session.tobiregister = {};
   req.session.tobiregister.callback = req.body.callback;
-  req.session.tobiregister.serviceNamespace = req.body.serviceKey.topic;
-  req.session.tobiregister.serviceKey = req.body.serviceKey;
+  var serviceToken = JSON.parse(req.body.serviceKey);
+  req.session.tobiregister.serviceNamespace = serviceToken.topic;
+  req.session.tobiregister.serviceKey = serviceToken;
   
   return res.render('tobi-connect.html', {
     clientDomain: parsed.hostname,
@@ -57,7 +58,7 @@ function allowAccess(req, res, next) {
     
   var model = new Model({
      user_id: req.user.get('id'),
-     service_namespace: req.session.tobiregister.serviceNamespace.topic,
+     service_namespace: req.session.tobiregister.serviceNamespace,
      service_key: req.session.tobiregister.serviceKey,
      origin: req.session.tobiregister.callback
   });
