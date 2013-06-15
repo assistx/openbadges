@@ -76,6 +76,39 @@
       </div>
     {% endif %}
   </fieldset>
+  
+  <fieldset id="federation-acceptance">
+    <legend>Connected Federations</legend>
+    {% if federations.length %}
+      {% for federation in federations %}
+        <div class="item">
+          <span class="title">
+            <strong>{{ federation.domain }}</strong>
+            <small>
+              <p>The federation at 
+                <a href="{{ federation.origin }}">{{ federation.domain }}</a> has
+                permission to:</p>
+                <ul>
+                    <li>Send badges to the federation</li>
+                </ul>
+            </small>
+          </span>
+          <div class="content">
+            <button type="button" class="btn btn-danger js-revoke"
+                    autocomplete="off"
+                    data-loading-text="Revoking..."
+                    data-revoke="{{ federation.origin }}">Revoke
+              access for {{ federation.domain }}</button>
+          </div>
+        </div>
+      {% endfor %}
+    {% else %}
+      <div class="item">
+        No federations found.
+      </div>
+    {% endif %}
+  </fieldset>
+  
 </form>
 {% endblock %}
 

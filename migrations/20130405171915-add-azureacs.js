@@ -20,11 +20,8 @@ exports.down = function(db, callback) {
 
 function addColumnIfNeeded(database, tableName, columnName, alterTableCommand, callback) {
     try {
-        console.log("checking for column...", columnName);
         database.runSql.bind(database, 'select ' + columnName + ' from `' + tableName + '` limit 1');
-        console.log("found");
     } catch (err) {
-        console.log("not found, adding", err);
         database.runSql.bind(database, alterTableCommand);
     }
     callback();
