@@ -17,8 +17,8 @@ function requestAccess(req, res) {
   if (!req.body.serviceKey)
     return res.send('serviceKey expected', 400);
 
-  var originErr = originValidator(req.query.callback);
-  var parsed = url.parse(req.query.callback, false, true);
+  var originErr = originValidator(req.body.callback);
+  var parsed = url.parse(req.body.callback, false, true);
   
   if (originErr)
     return res.send('invalid callback: ' + originErr, 400);
