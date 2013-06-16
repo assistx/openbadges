@@ -7,6 +7,7 @@ exports.initTOBI = function (app) {
     app.all('/tobi/*', allowCors);
     app.post('/tobi/accept', requestAccess);
     app.post('/tobi/accepted', allowAccess);
+    app.post('/tobi/revoke-origin', revokeOrigin);
 };
 
 function requestAccess(req, res) {
@@ -50,7 +51,6 @@ function allowAccess(req, res, next) {
     return res.send('serviceKey expected', 400);
   
   var originErr = originValidator(req.session.tobiregister.callback);
-  var parsed = url.parse(req.session.tobiregister.callback, false, true);
   
   if (originErr)
     return res.send('invalid callback: ' + originErr, 400);
@@ -59,7 +59,7 @@ function allowAccess(req, res, next) {
      user_id: req.user.get('id'),
      service_namespace: req.session.tobiregister.serviceNamespace,
      service_key: JSON.stringify(req.session.tobiregister.serviceKey),
-     origin: parsed.hostname
+     origin: req.session.tobiregister.callback
   });
   
   model.save(function(err) {
@@ -73,6 +73,27 @@ function allowAccess(req, res, next) {
     return res.redirect(utils.extendUrl(cburl, { status: "success" }), 303);
   });
 }
+
+function revokeOrigin(req, res, next) {
+  if (!req.user)
+    return res.send(403);
+  if (!req.body)
+    return res.send('body expected', 400);
+  if (!req.body.origin)
+    return res.send('origin URL expected', 400);
+
+  Model.revokeOriginForUser({
+    origin: req.body.origin,
+    user_id: req.user.get('id')
+  }, function(err) {
+    if (err) {
+      logger.warn('There was an error revoking an origin for a user');
+      logger.debug(err);
+      return next(err);
+    }
+    return res.send(204);
+  });
+};
 
 function allowCors(req, res, next) {
   res.set('access-control-allow-origin', '*');

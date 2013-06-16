@@ -94,7 +94,7 @@
             </small>
           </span>
           <div class="content">
-            <button type="button" class="btn btn-danger js-revoke"
+            <button type="button" class="btn btn-danger js-tobi-revoke"
                     autocomplete="off"
                     data-loading-text="Revoking..."
                     data-revoke="{{ federation.origin }}">Revoke
@@ -127,6 +127,19 @@ $(window).ready(function() {
     if (!window.confirm(confirmMsg)) return false;
     $(this).button('loading');
     $.post('/backpack/settings/revoke-origin', {
+      _csrf: '{{ csrfToken }}',
+      origin: origin
+    }, function() { item.slideUp(); });
+    return false;
+  });
+  $(".js-tobi-revoke").click(function() {
+    var item = $(this).closest(".item");
+    var origin = $(this).attr("data-revoke");
+    var confirmMsg = CONFIRM_MSG.replace(/ORIGIN/g, origin);
+
+    if (!window.confirm(confirmMsg)) return false;
+    $(this).button('loading');
+    $.post('/tobi/revoke-origin', {
       _csrf: '{{ csrfToken }}',
       origin: origin
     }, function() { item.slideUp(); });

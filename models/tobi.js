@@ -3,6 +3,7 @@ var regex = require('../lib/regex');
 var mysql = require('../lib/mysql');
 var Base = require('./mysql-base');
 var _ = require('underscore');
+var url = require('url');
 
 var Tobi = function (attributes) {
   this.attributes = attributes;
@@ -18,16 +19,22 @@ Tobi.summarizeForUser = function(userId, cb) {
         var origin = result.get('origin');
         if (!(origin in originPerms))
           originPerms[origin] = [];
-        originPerms[origin] = _.union(originPerms[origin],
-                                      result.get('permissions'));
+        originPerms[origin] = originPerms[origin];
       });
       cb(null, Object.keys(originPerms).sort().map(function(origin) {
         return {
           origin: origin,
-          permissions: originPerms[origin].sort()
+          domain: url.parse(origin, false, true).hostname
         };
       }));
     });
+};
+
+Tobi.revokeOriginForUser = function(options, cb) {
+    this.findAndDestroy({
+      origin: options.origin,
+      user_id: options.user_id
+    }, cb);
 };
 
 module.exports = Tobi;
