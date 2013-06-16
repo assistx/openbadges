@@ -62,13 +62,14 @@ function allowAccess(req, res, next) {
   });
   
   model.save(function(err) {
+    var cburl = req.session.tobiregister.callback;
     req.session.tobiregister = null;
     if (err) {
       logger.warn('There was an error creating a backpack connect token');
       logger.debug(err);
       return next(err);
     }
-    return res.redirect(utils.extendUrl(req.session.tobiregister.callback, { status: "success" }), 303);
+    return res.redirect(utils.extendUrl(cburl, { status: "success" }), 303);
   });
 }
 
