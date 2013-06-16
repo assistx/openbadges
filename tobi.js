@@ -50,7 +50,7 @@ function allowAccess(req, res, next) {
     return res.send('serviceKey expected', 400);
   
   var originErr = originValidator(req.session.tobiregister.callback);
-  var parsed = url.parse(req.body.callback, false, true);
+  var parsed = url.parse(req.session.tobiregister.callback, false, true);
   
   if (originErr)
     return res.send('invalid callback: ' + originErr, 400);
