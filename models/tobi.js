@@ -9,4 +9,24 @@ var Tobi = function (attributes) {
 
 Base.apply(Tobi, 'tobi');
 
+exports.summarizeForUser = function(userId, cb) {
+    this.find({user_id: userId}, function(err, results) {
+      var originPerms = {};
+      if (err) return cb(err);
+      results.forEach(function(result) {
+        var origin = result.get('serviceNamespace');
+        if (!(origin in originPerms))
+          originPerms[origin] = [];
+        originPerms[origin] = _.union(originPerms[origin],
+                                      result.get('permissions'));
+      });
+      cb(null, Object.keys(originPerms).sort().map(function(origin) {
+        return {
+          origin: origin,
+          permissions: originPerms[origin].sort()
+        };
+      }));
+    });
+};
+
 module.exports = Tobi;

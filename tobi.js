@@ -57,7 +57,7 @@ function allowAccess(req, res, next) {
   var model = new Model({
      user_id: req.user.get('id'),
      service_namespace: req.session.tobiregister.serviceNamespace,
-     service_key: req.session.tobiregister.serviceKey,
+     service_key: JSON.stringify(req.session.tobiregister.serviceKey),
      origin: req.session.tobiregister.callback
   });
   
@@ -68,7 +68,7 @@ function allowAccess(req, res, next) {
       logger.debug(err);
       return next(err);
     }
-    return res.redirect(utils.extendUrl(req.body.callback, { status: "success" }), 303);
+    return res.redirect(utils.extendUrl(req.session.tobiregister.callback, { status: "success" }), 303);
   });
 }
 

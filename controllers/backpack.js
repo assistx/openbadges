@@ -286,6 +286,7 @@ exports.settings = function(options) {
 
   var bpcModel = options.backpackConnectModel ||
                  require("../models/backpack-connect").Session;
+  var fedModel = options.tobiModel || require("../models/tobi");
   var getServices = options.getServices || function() {
       /* This needs to be plugged in to something */
 
@@ -317,13 +318,22 @@ exports.settings = function(options) {
       issuers.forEach(function(issuer) {
         issuer.domain = url.parse(issuer.origin).hostname;
       });
-
-      response.render('settings.html', {
-        error: error,
-        success: success,
-        csrfToken: request.session._csrf,
-        services: getServices(),
-        issuers: issuers
+      
+      fedModel.summarizeForUser(user.get('id'), function(err, federations) {
+          if (err) {
+            logger.warn("There was an error summarizing federations info");
+            logger.debug(err);
+            return next(err);
+          }
+          
+          response.render('settings.html', {
+            error: error,
+            success: success,
+            csrfToken: request.session._csrf,
+            services: getServices(),
+            issuers: issuers,
+            federations: federations
+          });
       });
     });
   };
