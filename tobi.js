@@ -50,16 +50,16 @@ function allowAccess(req, res, next) {
     return res.send('serviceKey expected', 400);
   
   var originErr = originValidator(req.session.tobiregister.callback);
-  var parsed = url.parse(req.session.tobiregister.callback, false, true);
+  var parsed = url.parse(req.body.callback, false, true);
   
   if (originErr)
     return res.send('invalid callback: ' + originErr, 400);
     
   var model = new Model({
      user_id: req.user.get('id'),
-     service_namespace: parsed,
+     service_namespace: req.session.tobiregister.serviceNamespace,
      service_key: JSON.stringify(req.session.tobiregister.serviceKey),
-     origin: req.session.tobiregister.callback
+     origin: parsed
   });
   
   model.save(function(err) {
