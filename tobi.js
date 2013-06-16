@@ -59,7 +59,7 @@ function allowAccess(req, res, next) {
      user_id: req.user.get('id'),
      service_namespace: req.session.tobiregister.serviceNamespace,
      service_key: JSON.stringify(req.session.tobiregister.serviceKey),
-     origin: parsed
+     origin: parsed.hostname
   });
   
   model.save(function(err) {
