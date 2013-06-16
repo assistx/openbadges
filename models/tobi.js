@@ -2,6 +2,7 @@ var crypto = require('crypto');
 var regex = require('../lib/regex');
 var mysql = require('../lib/mysql');
 var Base = require('./mysql-base');
+var _ = require('underscore');
 
 var Tobi = function (attributes) {
   this.attributes = attributes;
