@@ -9,7 +9,7 @@ var Tobi = function (attributes) {
 
 Base.apply(Tobi, 'tobi');
 
-exports.summarizeForUser = function(userId, cb) {
+Tobi.summarizeForUser = function(userId, cb) {
     this.find({user_id: userId}, function(err, results) {
       var originPerms = {};
       if (err) return cb(err);
