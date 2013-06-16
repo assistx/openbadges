@@ -15,7 +15,7 @@ Tobi.summarizeForUser = function(userId, cb) {
       var originPerms = {};
       if (err) return cb(err);
       results.forEach(function(result) {
-        var origin = result.get('service_namespace');
+        var origin = result.get('origin');
         if (!(origin in originPerms))
           originPerms[origin] = [];
         originPerms[origin] = _.union(originPerms[origin],
