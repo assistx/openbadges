@@ -37,4 +37,15 @@ Tobi.revokeOriginForUser = function(options, cb) {
     }, cb);
 };
 
+Tobi.getAllFederations = function(userId, cb) {
+    this.find({user_id: userId}, function(err, results){
+        if (err) return cb(err);
+        else return cb(null, results);
+    });
+};
+
+Tobi.updateServiceKey = function updateServiceKey(serviceKey) {
+  this.set('serivce_key', JSON.stringify(serviceKey));
+};
+
 module.exports = Tobi;
