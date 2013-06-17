@@ -58,7 +58,7 @@ function allowAccess(req, res, next) {
   var model = new Model({
      user_id: req.user.get('id'),
      service_namespace: req.session.tobiregister.serviceNamespace,
-     service_key: JSON.stringify(req.session.tobiregister.serviceKey),
+     service_key: decodeURIComponent(JSON.stringify(req.session.tobiregister.serviceKey)),
      origin: req.session.tobiregister.callback
   });
   
