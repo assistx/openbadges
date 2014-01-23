@@ -27,7 +27,7 @@
     "up-time": "~0.2.1",
     "winston": "~0.5.10",
     "passport": "~0.1.15",
-    "passport-wsfed-saml2": "~0.3.12",
+    "passport-wsfed-saml2": "~0.8.3",
     "optimist": "~0.3.0",
     "openbadges-validator": "0.0.21",
     "openbadges-bakery": "0.2.2",
